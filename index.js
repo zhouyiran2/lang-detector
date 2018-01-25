@@ -22,8 +22,6 @@
  *	THE SOFTWARE.
  */
 
-var _ = require('underscore');
-
 /**
  * A checker is an object with the following form:
  *  { pattern: /something/, points: 1 }
@@ -45,7 +43,7 @@ var _ = require('underscore');
  *  and one has a higher precedence over the other one.
  */
 var languages = {
-	'JavaScript': [
+	'js': [
 		// undefined keyword
 		{ pattern: /undefined/g, points: 2 },
 		// console.log('ayy lmao')
@@ -76,7 +74,7 @@ var languages = {
 		{ pattern: /<(\/)?script( type=('|")text\/javascript('|"))?>/, points: -50 },
 	],
 
-	'C': [
+	'c': [
 		// Primitive variable declaration.
 		{ pattern: /(char|long|int|float|double)( )+\w+( )*=?/, points: 2 },
 		// malloc function call
@@ -111,7 +109,7 @@ var languages = {
 		{ pattern: /var( )+\w+( )*=?/, points: -1 },
 	],
 
-	'C++': [
+	'cpp': [
 		// Primitive variable declaration.
 		{ pattern: /(char|long|int|float|double)( )+\w+( )*=?/, points: 2 },
 		// #include <whatever.h>
@@ -150,7 +148,7 @@ var languages = {
 		{ pattern: /(List<\w+>|ArrayList<\w*>( )*\(.*\))(( )+[\w]+|;)/, points: -1 },
 	],
 
-	'Python': [
+	'python': [
 		// Function definition
 		{ pattern: /def( )+\w+\(.*\)( )*:/, points: 2 },
 		// while loop
@@ -177,7 +175,7 @@ var languages = {
 		{ pattern: /(&{2}|\|{2})/, points: -1 },
 	],
 
-	'Java': [
+	'java': [
 		// System.out.println() etc.
 		{ pattern: /System\.(in|out)\.\w+/, points: 2 },
 		// Class variable declarations
@@ -220,78 +218,7 @@ var languages = {
 		{ pattern: /#include( )*(<|")\w+(\.h)?(>|")/, points: -1, nearTop: true },
 	],
 
-	'HTML': [
-		{ pattern: /<!DOCTYPE (html|HTML PUBLIC .+)>/, points: 2, nearTop: true },
-		// Tags
-		{ pattern: /<[a-z0-9]+(( )*[\w]+=('|").+('|")( )*)?>.*<\/[a-z0-9]+>/g, points: 2 },
-		// Properties
-		{ pattern: /[a-z\-]+=("|').+("|')/g, points: 2 },
-		// PHP tag
-		{ pattern: /<\?php/, points: -50 },
-	],
-
-	'CSS': [
-		// Properties
-		{ pattern: /[a-z\-]+:(?!:).+;/, points: 2 },
-		// <style> tag from HTML
-		{ pattern: /<(\/)?style>/, points: -50 },
-	],
-
-	'Ruby': [
-		// require/include
-		{ pattern: /(require|include)( )+'\w+(\.rb)?'/, points: 2, nearTop: true },
-		// Function definition
-		{ pattern: /def( )+\w+( )*(\(.+\))?( )*\n/, points: 2 },
-		// Instance variables
-		{ pattern: /@\w+/, points: 2 },
-		// Boolean property
-		{ pattern: /\.\w+\?/, points: 2 },
-		// puts (Ruby print)
-		{ pattern: /puts( )+("|').+("|')/, points: 2 },
-		// Inheriting class
-		{ pattern: /class [A-Z]\w*( )*<( )*([A-Z]\w*(::)?)+/, points: 2 },
-		// attr_accessor
-		{ pattern: /attr_accessor( )+(:\w+(,( )*)?)+/, points: 2 },
-		// new
-		{ pattern: /\w+\.new( )+/, points: 2 },
-		// elsif keyword
-		{ pattern: /elsif/, points: 2 },
-		// do
-		{ pattern: /do( )*\|(\w+(,( )*\w+)?)+\|/, points: 2 },
-		// for loop
-		{ pattern: /for (\w+|\(?\w+,( )*\w+\)?) in (.+)/, points: 1 },
-		// nil keyword
-		{ pattern: /nil/, points: 1 },
-		// Scope operator
-		{ pattern: /[A-Z]\w*::[A-Z]\w*/, points: 1 },
-	],
-
-	'Go': [
-		// package something
-		{ pattern: /package( )+[a-z]+\n/, points: 2, nearTop: true },
-		// import
-		{ pattern: /(import( )*\(( )*\n)|(import( )+"[a-z0-9\/\.]+")/, points: 2, nearTop: true },
-		// error check
-		{ pattern: /if.+err( )*!=( )*nil.+{/, points: 2 },
-		// Go print
-		{ pattern: /fmt\.Print(f|ln)?\(.*\)/, points: 2 },
-		// function
-		{ pattern: /func(( )+\w+( )*)?\(.*\).*{/, points: 2 },
-		// variable initialisation
-		{ pattern: /\w+( )*:=( )*.+[^;\n]/, points: 2 },
-		// if/else if
-		{ pattern: /(}( )*else( )*)?if[^\(\)]+{/, points: 2 },
-		// var/const declaration
-		{ pattern: /(var|const)( )+\w+( )+[\w\*]+(\n|( )*=|$)/, points: 2 },
-		// public access on package
-		{ pattern: /[a-z]+\.[A-Z]\w*/, points: 1 },
-		// nil keyword
-		{ pattern: /nil/, points: 1 },
-		// Single quote multicharacter string
-		{ pattern: /'.{2,}'/, points: -1 },
-	],
-
-	'PHP': [
+	'php': [
 		// PHP tag
 		{ pattern: /<\?php/, points: 2 },
 		// PHP style variables.
@@ -321,8 +248,6 @@ var languages = {
 		// C/JS style variable declaration.
 		{ pattern: /(^|\s)(var|char|long|int|float|double)( )+\w+( )*=?/, points: -1 },
 	],
-
-	'Unknown': [],
 };
 
 function getPoints(language, lineOfCode, checkers) {
@@ -406,5 +331,3 @@ function detectLang(snippet, options) {
 
 	return bestResult.language;
 }
-
-module.exports = detectLang;
