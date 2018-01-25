@@ -74,39 +74,43 @@ var languages = {
 		{ pattern: /<(\/)?script( type=('|")text\/javascript('|"))?>/, points: -50 },
 	],
 
-	'c': [
+	'cc14': [
 		// Primitive variable declaration.
 		{ pattern: /(char|long|int|float|double)( )+\w+( )*=?/, points: 2 },
-		// malloc function call
-		{ pattern: /malloc\(.+\)/, points: 2 },
 		// #include <whatever.h>
-		{ pattern: /#include (<|")\w+\.h(>|")/, points: 2, nearTop: true },
-		// pointer
-		{ pattern: /(\w+)( )*\*( )*\w+/, points: 2 },
-		// Variable declaration and/or initialisation.
-		{ pattern: /(\w+)( )+\w+(;|( )*=)/, points: 1 },
-		// Array declaration.
-		{ pattern: /(\w+)( )+\w+\[.+\]/, points: 1 },
+		{ pattern: /#include( )*(<|")\w+(\.h)?(>|")/, points: 2, nearTop: true },
+		// using namespace something
+		{ pattern: /using( )+namespace( )+.+( )*;/, points: 2 },
+		// template declaration
+		{ pattern: /template( )*<.*>/, points: 2 },
+		// std
+		{ pattern: /std::\w+/g, points: 2 },
+		// cout/cin/endl
+		{ pattern: /(cout|cin|endl)/g, points: 2 },
+		// Visibility specifiers
+		{ pattern: /(public|protected|private):/, points: 2 },
+		// nullptr
+		{ pattern: /nullptr/, points: 2 },
+		// new Keyword
+		{ pattern: /new \w+(\(.*\))?/, points: 1 },
 		// #define macro
 		{ pattern: /#define( )+.+/, points: 1 },
-		// NULL constant
-		{ pattern: /NULL/, points: 1 },
+		// template usage
+		{ pattern: /\w+<\w+>/, points: 1 },
+		// class keyword
+		{ pattern: /class( )+\w+/, points: 1 },
 		// void keyword
 		{ pattern: /void/g, points: 1 },
 		// (else )if statement
 		{ pattern: /(else )?if( )*\(.+\)/, points: 1 },
 		// while loop
 		{ pattern: /while( )+\(.+\)/, points: 1 },
-		// printf function
-		{ pattern: /(printf|puts)( )*\(.+\)/, points: 1 },
-		// new Keyword from C++
-		{ pattern: /new \w+/, points: -1 },
-		// new Keyword from Java
-		{ pattern: /new [A-Z]\w*( )*\(.+\)/, points: 2 },
+		// Scope operator
+		{ pattern: /\w*::\w+/, points: 1 },
 		// Single quote multicharacter string
 		{ pattern: /'.{2,}'/, points: -1 },
-		// JS variable declaration
-		{ pattern: /var( )+\w+( )*=?/, points: -1 },
+		// Java List/ArrayList
+		{ pattern: /(List<\w+>|ArrayList<\w*>( )*\(.*\))(( )+[\w]+|;)/, points: -1 },
 	],
 
 	'cpp': [
@@ -146,6 +150,41 @@ var languages = {
 		{ pattern: /'.{2,}'/, points: -1 },
 		// Java List/ArrayList
 		{ pattern: /(List<\w+>|ArrayList<\w*>( )*\(.*\))(( )+[\w]+|;)/, points: -1 },
+	],
+
+	'c': [
+		// Primitive variable declaration.
+		{ pattern: /(char|long|int|float|double)( )+\w+( )*=?/, points: 2 },
+		// malloc function call
+		{ pattern: /malloc\(.+\)/, points: 2 },
+		// #include <whatever.h>
+		{ pattern: /#include (<|")\w+\.h(>|")/, points: 2, nearTop: true },
+		// pointer
+		{ pattern: /(\w+)( )*\*( )*\w+/, points: 2 },
+		// Variable declaration and/or initialisation.
+		{ pattern: /(\w+)( )+\w+(;|( )*=)/, points: 1 },
+		// Array declaration.
+		{ pattern: /(\w+)( )+\w+\[.+\]/, points: 1 },
+		// #define macro
+		{ pattern: /#define( )+.+/, points: 1 },
+		// NULL constant
+		{ pattern: /NULL/, points: 1 },
+		// void keyword
+		{ pattern: /void/g, points: 1 },
+		// (else )if statement
+		{ pattern: /(else )?if( )*\(.+\)/, points: 1 },
+		// while loop
+		{ pattern: /while( )+\(.+\)/, points: 1 },
+		// printf function
+		{ pattern: /(printf|puts)( )*\(.+\)/, points: 1 },
+		// new Keyword from C++
+		{ pattern: /new \w+/, points: -1 },
+		// new Keyword from Java
+		{ pattern: /new [A-Z]\w*( )*\(.+\)/, points: 2 },
+		// Single quote multicharacter string
+		{ pattern: /'.{2,}'/, points: -1 },
+		// JS variable declaration
+		{ pattern: /var( )+\w+( )*=?/, points: -1 },
 	],
 
 	'python': [
@@ -261,12 +300,7 @@ function getPoints(language, lineOfCode, checkers) {
 	}, 0);
 }
 
-function detectLang(snippet, options) {
-	var opts = _.defaults(options || {}, {
-		heuristic: true,
-		statistics: false,
-	});
-
+function detectLang(snippet, all_lang) {
 	var linesOfCode = snippet
 		.replace(/\r\n?/g, '\n')
 		.replace(/\n{2,}/g, '\n')
@@ -279,12 +313,13 @@ function detectLang(snippet, options) {
 		return index < linesOfCode.length / 10;
 	}
 
-	if (opts.heuristic && linesOfCode.length > 500) {
+	if (linesOfCode.length > 500) {
+		var block = Math.ceil(linesOfCode.length / 500);
 		linesOfCode = linesOfCode.filter(function(lineOfCode, index) {
 			if (nearTop(index)) {
 				return true;
 			}
-			return index % Math.ceil(linesOfCode.length / 500) === 0;
+			return index % block === 0;
 		});
 	}
 
@@ -317,17 +352,15 @@ function detectLang(snippet, options) {
 		return { language: language, points: points };
 	});
 
-	var bestResult = _.max(results, function(result) {
-		return result.points;
-	});
 
-	if (opts.statistics) {
-		var statistics = {};
-		for (var result of results) {
-			statistics[result.language] = result.points;
-		}
-		return { detected: bestResult.language, statistics: statistics };
-	}
-
-	return bestResult.language;
+    var max = -1e9;
+    var detected_lang = "none";
+	for (var result of results) {
+	  var language = result.language;
+      if($.inArray(language, all_lang)!=-1 && result.points>max) {
+        max = result.points;
+        detected_lang = language;
+      }
+    }
+    return detected_lang;
 }
